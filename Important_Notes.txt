@@ -1,0 +1,27 @@
+#### v1.0
+============= 安裝 =============
+1.pip install -r requirements.txt 可以安裝 requirements.txt 的套件 (如有缺漏請自行補上)
+2.需下載vscode的Extension API
+3.目前使用的是 "gemma3:12b" ，所以請先確認已經安裝此模型，不過我已經把我的api丟上去應該是可以運作
+3.有5個檔案:analyzer.py(呼叫本地API分析)、html_utils.py(HTML處理與萃取)、models.py(Pydantic模型)、server.py(用Flask Server來接收文字/HTML)、requirements(安裝所需套件的項目)
+4.以測試過的模型判斷等待時間 : gemma3:1b(4.954s、3.655s) 、 gemma3:4b(7.057s、7.867s) 、 gemma3:12b(34.195s、32.195s)、gemma3:27b(150.125s、199.165s)
+5.若出現analyzer.cpython-313.pyc等等之類的東西，那是Python 自動生成的快取檔案，用來加速的，不必把這個傳給其他人也可以動
+6.待補充
+
+============= code =============
+1.一定要用instructor，它是用來把文字輸入轉成 AI 回應，再直接解析成你指定的模型物件，簡單來說就是幫你規定模型輸出的方式，不用這個花我一堆時間
+2.server那裏的flask_cors一定要用，不然可能會連不到extension
+3.http://127.0.0.1:5000/analyze 只會在自己的電腦上有效，所以應該是不用改這，如果有錯在叫我
+3.待補充
+
+============= 使用 =============
+1.啟動方式 : 先確保extension有裝好 -> 啟動server.py -> 在extension輸入資訊並送出 -> 等大約30秒(建議不要亂按，我不知道extension那個介面消失會不會回傳結果) -> 會在extension那裏看到結果
+2.我是用vscode的"在專用終端機執行python檔案"這個選項來啟動server.py
+3.目前能判斷"html"和"內文"
+4.待補充
+
+============= 調整方向 =============
+1.extension那裏的功能與介面，目前只是為了測試需求所開發
+2.判斷詐騙的機制不足，可以增加
+3.extension那裏我是讓使用者輸入html，之後看有甚麼辦法直接獲得html，不依賴使用者自己手動
+4.待補充
