@@ -13,6 +13,88 @@ def extract_relevant_html(raw_html: str, max_length: int = 3000) -> str:
     return result[:max_length]
 
 
+def _normalize_url(url: str) -> str | None:
+    """標準化 URL，過濾無效協定與雜訊符號。
+    - 移除結尾雜訊字元，例如引號、逗號、右括號等
+    - 支援 // 開頭協定相對 URL 與 www. 開頭 URL
+    - 僅保留 http/https 協定
+    - 正規化網域大小寫與移除預設連接埠
+    """
+    from urllib.parse import urlparse, urlunparse
+
+    if not url:
+        return None
+
+    url = url.strip().strip('\'"(),.;:!?]}>')
+
+    # 直接忽略不需要的協定
+    if url.startswith(("javascript:", "mailto:", "tel:", "#")):
+        return None
+
+    # 處理協定相對 URL
+    if url.startswith("//"):
+        url = "http:" + url
+
+    # 補上 http 協定
+    if url.startswith("www."):
+        url = "http://" + url
+
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return None
+
+        netloc = parsed.netloc.lower().rstrip('.')
+        # 去除預設連接埠
+        if netloc.endswith(":80") and parsed.scheme == "http":
+            netloc = netloc[:-3]
+        if netloc.endswith(":443") and parsed.scheme == "https":
+            netloc = netloc[:-4]
+
+        path = parsed.path or "/"
+        normalized = urlunparse((parsed.scheme, netloc, path, "", parsed.query, ""))
+        return normalized
+    except Exception:
+        return None
+
+
+def extract_urls(text: str, max_count: int = 50) -> list[str]:
+    """從 HTML 或純文字中萃取網址並正規化。
+    返回不重複的 http/https URL，最多 max_count 筆。
+    """
+    import re
+    from bs4 import BeautifulSoup
+
+    urls: set[str] = set()
+
+    lowered = text.lower()
+
+    # 若看起來像 HTML，先從 <a href> 萃取
+    if "<html" in lowered or "<a " in lowered or "href=" in lowered:
+        try:
+            soup = BeautifulSoup(text, "html.parser")
+            for a in soup.find_all("a", href=True):
+                href = (a.get("href") or "").strip()
+                norm = _normalize_url(href)
+                if norm:
+                    urls.add(norm)
+        except Exception:
+            # 解析 HTML 失敗時忽略，改走正則
+            pass
+
+    # 以正則從純文字抓取 URL（含 www. 形式）
+    pattern = re.compile(r"(?i)\b((?:https?://|www\.)[^\s<>\"'\)]{3,})")
+    for m in pattern.finditer(text):
+        cand = m.group(1)
+        norm = _normalize_url(cand)
+        if norm:
+            urls.add(norm)
+
+    # 回傳固定順序以利測試：依字典序排序後截斷
+    result = sorted(urls)[:max_count]
+    return result
+
+
 # ------------------------------
 # 功能：將完整 HTML 網頁內容萃取成簡化文本，方便送給分析模型處理。
 # 使用套件：BeautifulSoup (pip install beautifulsoup4)

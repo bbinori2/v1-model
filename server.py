@@ -3,7 +3,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from analyzer import analyze_web
-from html_utils import extract_relevant_html
+from html_utils import extract_relevant_html, extract_urls
 
 app = Flask(__name__)
 CORS(app)  # 允許所有來源跨域請求
@@ -13,10 +13,18 @@ def analyze():
     data = request.json
     text = data.get("text", "")
 
+    # 先從輸入中抓取網址，供模型審查
+    urls = extract_urls(text)
+
     if "<html" in text.lower():
         reduced_html = extract_relevant_html(text)
     else:
         reduced_html = text
+
+    # 將擷取網址以特殊區塊附加，讓模型可針對清單逐一審視
+    if urls:
+        urls_block = "<extracted_urls>\n" + "\n".join(urls[:50]) + "\n</extracted_urls>"
+        reduced_html = f"{reduced_html}\n\n{urls_block}"
 
     analysis = analyze_web(reduced_html)
     return jsonify(analysis.model_dump())

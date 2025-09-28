@@ -23,6 +23,7 @@ def analyze_web(content: str) -> SimplePhishingAnalysis:
                 "輸出必須符合 SimplePhishingAnalysis 模型的 JSON 結構。"
                 "除非有明顯且多重釣魚特徵，否則標記為 Likely Legitimate。"
                 "遇到知名教育機構或政府單位網站，預設為合法，除非網址或內容有明顯異常。"
+                "如果輸入中包含 <extracted_urls> 區塊，請逐項檢視清單中的每個網址是否疑似假冒、拼字相近、可疑子網域、短網址轉跳、HTTP 非加密、異常 TLD、或與頁面主��無關等；並將觀察到的可疑元素與建議動作寫入對應欄位。"
             ),
         },
         {
